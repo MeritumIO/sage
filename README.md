@@ -30,13 +30,50 @@ php bin/sage
 
 ## Dev Environment
 
-Sage ships with a `devenv.nix` for [devenv](https://devenv.sh):
+Sage ships with a `devenv.nix` for [devenv](https://devenv.sh) — a Nix-based developer environment that provides PHP and Composer without requiring a system install.
+
+### Prerequisites
+
+1. Install [Nix](https://nixos.org/download/) (the package manager, not the OS)
+2. Install [devenv](https://devenv.sh/getting-started/)
+
+### Usage
+
+Enter the development shell:
 
 ```bash
 devenv shell
 ```
 
-PHP extensions and services (PostgreSQL, Redis, etc.) can be added in `devenv.nix`.
+This activates PHP 8.4, Composer, and `vendor/bin` on your `PATH`. Your `.env` file is loaded automatically.
+
+From inside the shell, install dependencies and run the application:
+
+```bash
+composer install
+php bin/sage
+```
+
+### Customising the environment
+
+Open `devenv.nix` to add PHP extensions or services:
+
+```nix
+php = pkgs.php84.withExtensions ({ enabled, all }: enabled ++ [
+    all.pdo_pgsql
+    all.pdo_mysql
+]);
+```
+
+```nix
+# services.postgres = {
+#   enable = true;
+#   listen_addresses = "127.0.0.1";
+# };
+# services.redis.enable = true;
+```
+
+Uncomment the services you need and run `devenv up` to start them.
 
 ## Adding a Command
 
@@ -63,6 +100,8 @@ final class HelloCommand extends Command
 Register it in `AppModule::register()`:
 
 ```php
+use Meritum\Cli\CliKernelOption;
+
 $kernel->define(HelloCommand::class, function (): HelloCommand {
     $command = new HelloCommand();
     $command->setName('hello')->setDescription('Say hello');
